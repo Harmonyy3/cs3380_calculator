@@ -10,9 +10,9 @@
 //with additional comprehensiive test
 
 //update:
-//either main () conflict with catch.cpp or 
+//while doing the CHECK either main () conflict with catch.cpp or 
 //in catch.cpp putback() into full buffer
-
+//Four features does work
 
 // Token stuff
 // Token “kind” values:
@@ -24,7 +24,7 @@ char const variable_assign='='; //help to assign variable
 
 //3. pre-defined symbolic values
 const double pi_value=3.141592653;  // like 2*pi 
-const double e_value=2.7182818284;  // like e^3
+const double e_value=2.7182818284;  // like e^x
 
  
 class token
@@ -70,7 +70,6 @@ public:
     {
         return Var_;
     }
-    
 };
 
 // User interaction strings:
@@ -167,30 +166,30 @@ token token_stream::get()    // read a token from the token_stream
         }
     }
     case 'e':
-        //throw error if ei, ea, ep;
-        if(std::cin.peek() != '^' && std::cin.peek() != '*'&& std::cin.peek() != '%'
-        && std::cin.peek() != '+'&& std::cin.peek() != '-')
+        //e have to be the front for e^number or e*number calculation
+        if(std::cin.peek() != '^' && std::cin.peek() != '*'
+        && std::cin.peek() != '%' && std::cin.peek() != '+'&& std::cin.peek() != '-')
             throw std::runtime_error("Bad token");
         return token(number, e_value);
-        break;
+
     default:
-        //function isaplha check is it aplhabetic  --the character
+        //check for character
         if (isalpha(ch))
         {
             std::string var_character;
             var_character+=ch;
-            //read whole variable Var
-            while (std::cin.get(ch))
-            var_character+=ch;
-            std::cin.putback(ch);
-
+            //read Var
+            while (std::cin.get(ch)&& ((isalnum(ch)) ||isdigit(ch)))var_character+=ch;
+            {
+                std::cin.putback(ch);
+            }
             if (var_character=="pi") 
                 return token (number, pi_value);
-
+                
             else if (var_character=="e") 
                 return token (number, e_value);
-
-            else return token(Var, var_character);
+            else 
+                return token(Var, var_character);
         }
         throw std::runtime_error("Bad token");
     }
@@ -235,20 +234,20 @@ double primary()    // Number or ‘(‘ Expression ‘)’
     case number:    // we use ‘8’ to represent the “kind” of a number
         return t.value();    // return the number’s value
     case '-':       //for negative numbers
-        return -primary();   //return the negative numbers
+        return -primary();   //evaluate the negative numbers
     case '^':
         {
             double d =primary();
-            return std::pow (t.value(), d);  //exponent function, t.value^d
+            return std::pow (t.value(), d);
         }
     case Var:
         {
             token next_t = ts.get();
-            if (next_t.kind() == variable_assign)  //if next is "="
+            if (next_t.kind() == variable_assign) //next is "-"
             {
             double value = expression();
             variables[t.Var()] = value;
-                return value;
+            return value;
             } 
             else if (variables.count(t.Var())) 
             {
@@ -379,7 +378,7 @@ void calculate()
 
 int main()
 {
-   try
+    try
     {
         calculate();
         return 0;
@@ -388,6 +387,6 @@ int main()
     {
         // other errors (don't try to recover)
         std::cerr << "exception\n";
-       return 2;
+        return 2;
     }
 }
